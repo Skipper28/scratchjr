@@ -33,8 +33,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.RelativeLayout;
 
-import com.google.firebase.analytics.FirebaseAnalytics;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
@@ -103,9 +101,6 @@ public class ScratchJrActivity
     public int micPermissionResult = PackageManager.PERMISSION_DENIED;
     public int readExtPermissionResult = PackageManager.PERMISSION_DENIED;
 
-    /* Firebase analytics tracking */
-    private FirebaseAnalytics _FirebaseAnalytics;
-
     /**
      * Project uri that need to be imported.
      */
@@ -155,8 +150,6 @@ public class ScratchJrActivity
         if (it != null && it.getData() != null) {
             receiveProject(it.getData());
         }
-
-        _FirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
         // When System UI bar is displayed, wait one second and then re-assert immersive mode.
         getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(new OnSystemUiVisibilityChangeListener() {
@@ -430,10 +423,6 @@ public class ScratchJrActivity
                 // Sync cookies
                 CookieSyncManager.getInstance().sync();
 
-                // Track page load
-                String[] parts = url.split("/");
-                String page = parts[parts.length - 1].split("\\?")[0];
-                _FirebaseAnalytics.setCurrentScreen((Activity) view.getContext(), page, null);
             }
         });
         _webView.requestFocus(View.FOCUS_DOWN);
@@ -515,27 +504,12 @@ public class ScratchJrActivity
      * @param label
      */
     public void logAnalyticsEvent(String category, String action, String label) {
-        Bundle params = new Bundle();
-        params.putString(FirebaseAnalytics.Param.ITEM_CATEGORY, category);
-        params.putString(FirebaseAnalytics.Param.ITEM_NAME, label);
-        _FirebaseAnalytics.logEvent(action, params);
     }
 
-    /**
-     * Record the preferred place for the user: home, school, other, noanswer
-     * @param place
-     */
     public void setAnalyticsPlacePref(String place) {
-        _FirebaseAnalytics.setUserProperty("place_preference", place);
     }
 
-    /**
-     * Record a user property
-     * @param key like "school"
-     * @param value like "Central High"
-     */
     public void setAnalyticsPref(String key, String value) {
-        _FirebaseAnalytics.setUserProperty(key, value);
     }
 
     public void translateAndScaleRectToContainerCoords(RectF rect, float devicePixelRatio) {

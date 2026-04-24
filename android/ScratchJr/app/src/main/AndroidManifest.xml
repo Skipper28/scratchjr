@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.scratchjr.android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+                     android:maxSdkVersion="32"/>
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
@@ -20,12 +18,14 @@
         android:hardwareAccelerated="true"
         android:resizeableActivity="false">
         <provider android:name="ShareContentProvider"
+                  android:exported="false"
                   android:grantUriPermissions="true"
                   android:authorities="${applicationId}.ShareContentProvider">
         </provider>
 
         <activity
             android:name=".ScratchJrActivity"
+            android:exported="true"
             android:label="@string/app_name"
             android:windowSoftInputMode="adjustResize"
             android:configChanges="keyboard|keyboardHidden"
@@ -72,15 +72,6 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name="com.google.android.gms.analytics.AnalyticsReceiver"
-            android:enabled="true">
-            <intent-filter>
-                <action android:name="com.google.android.gms.analytics.ANALYTICS_DISPATCH" />
-            </intent-filter>
-        </receiver>
-        <service android:name="com.google.android.gms.analytics.AnalyticsService"
-            android:enabled="true"
-            android:exported="false"/>
     </application>
 
 </manifest>

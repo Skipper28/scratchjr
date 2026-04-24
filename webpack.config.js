@@ -1,5 +1,3 @@
-var WebpackNotifierPlugin = require('webpack-notifier');
-
 module.exports = {
     devtool: 'source-map',
     entry: {
@@ -13,29 +11,18 @@ module.exports = {
         hints: false
     },
     watchOptions: {
-        ignored: ["node_modules", "src/build/**/*"]
+        ignored: ['node_modules', 'src/build/**/*']
     },
     module: {
         rules: [
             {
-                test: /\.js$/,
-                include: /node_modules/,
-                loaders: ['strip-sourcemap-loader']
-            },
-            {
-                loader: 'babel-loader',
-                exclude: /node_modules/,
                 test: /\.jsx?$/,
-                query: {
+                exclude: /node_modules/,
+                loader: 'babel-loader',
+                options: {
                     presets: ['es2015', 'stage-3']
                 }
             }
         ]
-    },
-    plugins: [
-        new WebpackNotifierPlugin({
-            title: "ScratchJr",
-            alwaysNotify: true
-        })
-    ]
+    }
 };

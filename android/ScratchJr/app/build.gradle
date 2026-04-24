@@ -1,11 +1,22 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 28
-    buildToolsVersion "28.0.3"
+    namespace 'org.scratchjr.android'
+    compileSdk 34
 
     defaultConfig {
         applicationId "org.scratchjr.android"
+        minSdk 21
+        targetSdk 34
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     buildTypes {
@@ -15,13 +26,11 @@ android {
         }
     }
 
-    flavorDimensions 'scratchjrversion'
+    flavorDimensions = ['scratchjrversion']
     productFlavors {
         free {
             dimension = 'scratchjrversion'
             applicationId "org.scratchjr.androidfree"
-            minSdkVersion 21
-            targetSdkVersion 29
             versionCode 22
             versionName "1.2.11"
         }
@@ -30,15 +39,9 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.google.firebase:firebase-core:17.2.0'
-    implementation 'com.google.firebase:firebase-analytics:17.2.0'
-    implementation 'com.google.android.gms:play-services-location:17.0.0'
-    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
 }
 
-def appModuleRootFolder = '.'
-def srcDir = 'src'
-def googleServicesJson = 'google-services.json'
 def commonHome = '../../..'
 def html5Assets = 'src/main/assets/HTML5'
 
@@ -48,27 +51,26 @@ task switchToFree(type: Copy) {
     into html5Assets
 }
 
-task switchToFreeGA(type: Copy) {
-    def buildType = 'free'
-    from "${commonHome}/editions/${buildType}/android-resources"
-    include "$googleServicesJson"
-    into "$appModuleRootFolder"
-}
-
 task generateWebpackBundle(type: Exec) {
     workingDir '../../../bin'
     commandLine './bundle-compile.sh'
+    inputs.files(fileTree('../../../src') {
+        exclude 'build/**'
+    })
+    inputs.file '../../../webpack.config.js'
+    inputs.file '../../../package.json'
+    outputs.file '../../../src/build/bundles/app.bundle.js'
 }
 
 class GenerateScratchJrPNGsTask extends DefaultTask {
-    File commonHome = project.file("../../..")
-    File binDir = project.file("${commonHome}/bin")
+    @Internal File commonHome = project.file("../../..")
+    @Internal File binDir = project.file("${commonHome}/bin")
 
     @OutputDirectory
     File generatedAssets = project.file("src/main/assets")
-    File generatedHtml5Assets = project.file("${generatedAssets}/HTML5")
-    File pngLibrary = project.file("${generatedHtml5Assets}/pnglibrary")
-    File svgLibrary = project.file("${generatedHtml5Assets}/svglibrary")
+    @Internal File generatedHtml5Assets = project.file("${generatedAssets}/HTML5")
+    @Internal File pngLibrary = project.file("${generatedHtml5Assets}/pnglibrary")
+    @Internal File svgLibrary = project.file("${generatedHtml5Assets}/svglibrary")
 
     @TaskAction
     def go() {
@@ -82,7 +84,7 @@ class GenerateScratchJrPNGsTask extends DefaultTask {
     }
 }
 class CleanScratchJrResourcesTask extends DefaultTask {
-    File generatedAssets = project.file('src/main/assets')
+    @Internal File generatedAssets = project.file('src/main/assets')
 
     @TaskAction
     def go() {
@@ -95,16 +97,16 @@ task cleanScratchJrResources(type: CleanScratchJrResourcesTask)
 
 afterEvaluate {
     preBuild.dependsOn generateWebpackBundle
-    processFreeDebugGoogleServices.dependsOn switchToFreeGA
-    processFreeReleaseGoogleServices.dependsOn switchToFreeGA
 
-    generateFreeReleaseResources.dependsOn switchToFree
-    generateFreeDebugResources.dependsOn switchToFree
-    generateFreeReleaseResources.dependsOn generateScratchJrPNGs
-    generateFreeDebugResources.dependsOn generateScratchJrPNGs
+    tasks.matching { it.name.startsWith('mergeFree') && it.name.endsWith('Assets') }.all { t ->
+        t.dependsOn switchToFree
+        t.dependsOn generateScratchJrPNGs
+    }
+    tasks.matching { it.name.startsWith('generateFree') && it.name.endsWith('Resources') }.all { t ->
+        t.dependsOn switchToFree
+        t.dependsOn generateScratchJrPNGs
+    }
     generateScratchJrPNGs.mustRunAfter switchToFree
 }
 
 clean.dependsOn('cleanScratchJrResources')
-
-apply plugin: 'com.google.gms.google-services'
