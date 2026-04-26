@@ -19,7 +19,7 @@ require('intl/locale-data/jsonp/sv.js');
 require('intl/locale-data/jsonp/th.js');
 require('intl/locale-data/jsonp/zh.js');
 
-require('expose-loader?IntlMessageFormat!intl-messageformat');
+require('expose-loader?exposes=IntlMessageFormat!intl-messageformat');
 require('intl-messageformat/dist/locale-data/ca');
 require('intl-messageformat/dist/locale-data/de');
 require('intl-messageformat/dist/locale-data/en');
