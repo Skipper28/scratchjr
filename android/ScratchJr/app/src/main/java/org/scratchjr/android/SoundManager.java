@@ -16,8 +16,10 @@ import java.util.Set;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.media.AudioManager;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
+import android.os.Build;
 import android.util.Log;
 import android.util.SparseArray;
 
@@ -248,8 +250,18 @@ public class SoundManager {
 
     private void loadSoundEffects() {
         if (_soundEffectPool == null) {
-            _soundEffectPool = new SoundPool(11, AudioManager.STREAM_MUSIC, 0);
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                _soundEffectPool = new android.media.SoundPool.Builder()
+                        .setMaxStreams(11)
+                        .setAudioAttributes(new android.media.AudioAttributes.Builder()
+                                .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                                .build())
+                        .build();
+            } else {
+                _soundEffectPool = new SoundPool(11, AudioManager.STREAM_MUSIC, 0);
+            }
+            
             // Load all sound effects into memory
             AssetManager assetManager = _application.getAssets();
             try {

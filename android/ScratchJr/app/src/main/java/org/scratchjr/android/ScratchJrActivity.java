@@ -37,6 +37,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 /**
  * Main activity for Scratch Jr., consisting of a full-screen landscape WebView.
  *
@@ -47,7 +49,7 @@ import java.util.Vector;
  * @author markroth8
  */
 public class ScratchJrActivity
-    extends Activity
+    extends AppCompatActivity
 {
     /** Milliseconds to pan when showing the soft keyboard */
     private static final int SOFT_KEYBOARD_PAN_MS = 250;
@@ -93,7 +95,7 @@ public class ScratchJrActivity
     private int _softKeyboardScrollPosY1;
 
     /** Handler for posting delayed updates */
-    private final Handler _handler = new Handler();
+    private final Handler _handler = new Handler(android.os.Looper.getMainLooper());
 
     /** Run-time Permissions */
     private final int SCRATCHJR_CAMERA_MIC_PERMISSION = 1;
@@ -121,13 +123,7 @@ public class ScratchJrActivity
         _webView = (WebView) findViewById(R.id.webview);
         _webView.setBackgroundColor(0x00000000);
         _webView.clearCache(true);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            Log.i(LOG_TAG, "Setting non-immersive full screen");
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        } else {
-            setImmersiveMode();
-        }
+        setImmersiveMode();
         configureWebView();
         registerSoftKeyboardPanner();
         /* URL to load once ready */
@@ -151,21 +147,6 @@ public class ScratchJrActivity
             receiveProject(it.getData());
         }
 
-        // When System UI bar is displayed, wait one second and then re-assert immersive mode.
-        getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(new OnSystemUiVisibilityChangeListener() {
-            @Override
-            public void onSystemUiVisibilityChange(int visibility) {
-                _handler.postDelayed(new Runnable() {
-                    public void run() {
-                        runOnUiThread(new Runnable() {
-                            public void run() {
-                                setImmersiveMode();
-                            }
-                        });
-                    }
-                }, 1000);
-            }
-        });
         requestPermissions();
     }
 
@@ -268,7 +249,7 @@ public class ScratchJrActivity
             @Override
             public void run() {
                 _webView.onResume();
-                CookieSyncManager.getInstance().startSync();
+                CookieManager.getInstance().flush();
             }
         });
         runJavaScript("if (typeof(ScratchJr) !== 'undefined') ScratchJr.onResume();");
@@ -282,7 +263,7 @@ public class ScratchJrActivity
             @Override
             public void run() {
                 _webView.onPause();
-                CookieSyncManager.getInstance().stopSync();
+                CookieManager.getInstance().flush();
             }
         });
         _databaseManager.close();
@@ -359,21 +340,12 @@ public class ScratchJrActivity
     }
 
     private void setImmersiveMode() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            Log.i(LOG_TAG, "Setting immersive mode");
-            int immersiveStickyFlag = 0;
-            try {
-                immersiveStickyFlag = View.class.getField("SYSTEM_UI_FLAG_IMMERSIVE_STICKY").getInt(null);
-            } catch (IllegalAccessException | IllegalArgumentException | NoSuchFieldException e) {
-                Log.e(LOG_TAG, "Reflection fail", e);
-            }
-            _webView.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                  | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                  | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                  | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                  | View.SYSTEM_UI_FLAG_FULLSCREEN
-                  | immersiveStickyFlag);
+        Log.i(LOG_TAG, "Setting immersive mode");
+        androidx.core.view.WindowInsetsControllerCompat windowInsetsController =
+                androidx.core.view.WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        if (windowInsetsController != null) {
+            windowInsetsController.setSystemBarsBehavior(androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            windowInsetsController.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars());
         }
     }
 
@@ -397,7 +369,6 @@ public class ScratchJrActivity
         } else {
             cookieManager.setAcceptCookie(true);
         }
-        CookieSyncManager.createInstance(this);
 
         /* Object exposed to the JavaScript that makes it easy to bridge JavaScript and Java */
         JavaScriptDirectInterface javaScriptDirectInterface = new JavaScriptDirectInterface(this);
@@ -421,7 +392,7 @@ public class ScratchJrActivity
             @Override
             public void onPageFinished(WebView view, String url) {
                 // Sync cookies
-                CookieSyncManager.getInstance().sync();
+                CookieManager.getInstance().flush();
 
             }
         });

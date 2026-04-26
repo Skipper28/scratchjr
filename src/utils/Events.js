@@ -261,13 +261,13 @@ export default class Events {
         if (isTablet) {
             if (e.touches && (e.touches.length > 0)) {
                 return {
-                    x: e.touches[0].pageX,
-                    y: e.touches[0].pageY
+                    x: e.touches[0].clientX,
+                    y: e.touches[0].clientY
                 };
             } else if (e.changedTouches) {
                 return {
-                    x: e.changedTouches[0].pageX,
-                    y: e.changedTouches[0].pageY
+                    x: e.changedTouches[0].clientX,
+                    y: e.changedTouches[0].clientY
                 };
             }
         }

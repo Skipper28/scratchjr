@@ -21,6 +21,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.RectF;
 import android.hardware.Camera;
 import android.net.Uri;
+import android.os.Build;
 import android.text.Html;
 import android.util.Base64;
 import android.util.Log;
@@ -352,7 +353,12 @@ public class JavaScriptDirectInterface {
 
     @JavascriptInterface
     public boolean scratchjr_has_multiple_cameras() {
-        return Camera.getNumberOfCameras() > 1;
+        try {
+            android.hardware.camera2.CameraManager manager = (android.hardware.camera2.CameraManager) _activity.getSystemService(Context.CAMERA_SERVICE);
+            return manager.getCameraIdList().length > 1;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @JavascriptInterface
@@ -411,8 +417,8 @@ public class JavaScriptDirectInterface {
     @JavascriptInterface
     public void scratchjr_captureimage(final String onCameraCaptureComplete) {
         _cameraView.captureStillImage(
-            new Camera.PictureCallback() {
-                public void onPictureTaken(byte[] jpegData, Camera camera) {
+            new CameraView.PictureCallback() {
+                public void onPictureTaken(byte[] jpegData) {
                     sendBase64Image(onCameraCaptureComplete, jpegData);
                 }
             },
@@ -656,7 +662,11 @@ public class JavaScriptDirectInterface {
         it.setType(mimetype);
         it.putExtra(android.content.Intent.EXTRA_EMAIL, new String[] {});
         it.putExtra(android.content.Intent.EXTRA_SUBJECT, fileName);
-        it.putExtra(android.content.Intent.EXTRA_TEXT, Html.fromHtml(emailBody));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            it.putExtra(android.content.Intent.EXTRA_TEXT, Html.fromHtml(emailBody, Html.FROM_HTML_MODE_LEGACY));
+        } else {
+            it.putExtra(android.content.Intent.EXTRA_TEXT, Html.fromHtml(emailBody));
+        }
 
         // The stream data is a reference to the temporary file provided by our contentprovider
         it.putExtra(Intent.EXTRA_STREAM,
